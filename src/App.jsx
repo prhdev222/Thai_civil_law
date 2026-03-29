@@ -240,6 +240,7 @@ export default function App(){
   useEffect(()=>{if(ld)store.set("cv",vids);},[vids,ld]);useEffect(()=>{if(ld)store.set("cn",nts);},[nts,ld]);useEffect(()=>{if(ld)store.set("cnn",nn);},[nn,ld]);
   useEffect(()=>{if(ld)store.set("theme",theme);},[theme,ld]);useEffect(()=>{if(ld)store.set("fontScale",fontScale);},[fontScale,ld]);
   useEffect(()=>{const base=16;document.documentElement.style.fontSize=`${((base*fontScale)/100).toFixed(2)}px`;return()=>{document.documentElement.style.fontSize="";};},[fontScale]);
+  useEffect(()=>{if(theme==="light"){document.documentElement.style.background="#ffffff";document.body.style.background="#ffffff";document.body.style.color="#111111";}else{document.documentElement.style.background="";document.body.style.background="";document.body.style.color="";}return()=>{document.documentElement.style.background="";document.body.style.background="";document.body.style.color="";};},[theme]);
   const st={s:cntS(SECTIONS),v:vids.length,w:vids.filter(v=>v.status==="watched").length,n:nts.length};
   const tabs=[{id:"mindmap",icon:Map,l:"Mind Map"},{id:"youtube",icon:Youtube,l:"YouTube"},{id:"lectures",icon:FileText,l:"Lecture Notes"},{id:"search",icon:Search,l:"ค้นหา"}];
   const goToSection=id=>{setTab("mindmap");setMindmapTargetId(id);};
@@ -260,12 +261,12 @@ export default function App(){
   return(
 <div className={`min-h-screen bg-zinc-950 text-zinc-200 ${theme==="light"?"light-mode":""}`} style={{fontFamily:"'Sarabun','Noto Sans Thai',sans-serif"}}>
 <header className="border-b border-zinc-800/60 bg-zinc-950/80 backdrop-blur-xl sticky top-0 z-50">
-<div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+<div className="max-w-7xl mx-auto px-3 sm:px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
 <div className="flex items-center gap-3"><div className="w-9 h-9 rounded-xl bg-gradient-to-br from-teal-500/20 to-teal-600/10 border border-teal-500/20 flex items-center justify-center text-lg">📜</div><div><h1 className="text-base font-bold text-zinc-100 leading-tight">เรียนกฎหมายแพ่งฯ</h1><p className="text-[11px] text-zinc-500">ป.พ.พ. บรรพ ๑ หลักทั่วไป + บรรพ ๒ หนี้</p></div></div>
-<div className="flex items-center gap-2"><div className="flex items-center gap-1.5 text-xs text-zinc-500"><span className="px-2 py-1 bg-zinc-800/50 rounded-lg">{st.s} มาตรา</span><span className="px-2 py-1 bg-zinc-800/50 rounded-lg">{st.v} วิดีโอ</span><span className="px-2 py-1 bg-zinc-800/50 rounded-lg">{st.n} สรุป</span></div><div className="flex items-center gap-1"><button onClick={zoomOut} title="ลดขนาดตัวอักษร" className="p-1.5 rounded-lg bg-zinc-800/60 border border-zinc-700/60 text-zinc-300 hover:text-white"><Minus size={13}/></button><span className="text-[11px] text-zinc-500 w-10 text-center">{fontScale}%</span><button onClick={zoomIn} title="เพิ่มขนาดตัวอักษร" className="p-1.5 rounded-lg bg-zinc-800/60 border border-zinc-700/60 text-zinc-300 hover:text-white"><Plus size={13}/></button><button onClick={()=>setTheme(t=>t==="dark"?"light":"dark")} title={theme==="dark"?"สลับเป็น Bright mode":"สลับเป็น Dark mode"} className="p-1.5 rounded-lg bg-zinc-800/60 border border-zinc-700/60 text-zinc-300 hover:text-white">{theme==="dark"?<Sun size={14}/>:<Moon size={14}/>}</button><button onClick={logout} title="ล็อกเอาต์" className="text-[11px] px-2 py-1 rounded-md border border-zinc-700/60 bg-zinc-800/60 text-zinc-300 hover:text-white">ล็อกเอาต์</button></div></div></div>
-<div className="max-w-7xl mx-auto px-4 flex gap-0">{tabs.map(t=><button key={t.id} onClick={()=>setTab(t.id)} className={`px-4 py-2.5 flex items-center gap-2 text-sm font-medium border-b-2 transition-all ${tab===t.id?"border-teal-500 text-teal-400":"border-transparent text-zinc-500 hover:text-zinc-300"}`}><t.icon size={16}/>{t.l}</button>)}</div>
+<div className="flex flex-wrap items-center gap-2 sm:justify-end"><div className="flex items-center gap-1.5 text-xs text-zinc-500"><span className="px-2 py-1 bg-zinc-800/50 rounded-lg">{st.s} มาตรา</span><span className="px-2 py-1 bg-zinc-800/50 rounded-lg">{st.v} วิดีโอ</span><span className="px-2 py-1 bg-zinc-800/50 rounded-lg">{st.n} สรุป</span></div><div className="flex items-center gap-1"><button onClick={zoomOut} title="ลดขนาดตัวอักษร" className="p-1.5 rounded-lg bg-zinc-800/60 border border-zinc-700/60 text-zinc-300 hover:text-white"><Minus size={13}/></button><span className="text-[11px] text-zinc-500 w-10 text-center">{fontScale}%</span><button onClick={zoomIn} title="เพิ่มขนาดตัวอักษร" className="p-1.5 rounded-lg bg-zinc-800/60 border border-zinc-700/60 text-zinc-300 hover:text-white"><Plus size={13}/></button><button onClick={()=>setTheme(t=>t==="dark"?"light":"dark")} title={theme==="dark"?"สลับเป็น Bright mode":"สลับเป็น Dark mode"} className="p-1.5 rounded-lg bg-zinc-800/60 border border-zinc-700/60 text-zinc-300 hover:text-white">{theme==="dark"?<Sun size={14}/>:<Moon size={14}/>}</button><button onClick={logout} title="ล็อกเอาต์" className="text-[11px] px-2 py-1 rounded-md border border-zinc-700/60 bg-zinc-800/60 text-zinc-300 hover:text-white">ล็อกเอาต์</button></div></div></div>
+<div className="max-w-7xl mx-auto px-3 sm:px-4 overflow-x-auto"><div className="flex gap-0 min-w-max">{tabs.map(t=><button key={t.id} onClick={()=>setTab(t.id)} className={`px-4 py-2.5 flex items-center gap-2 text-sm font-medium border-b-2 transition-all ${tab===t.id?"border-teal-500 text-teal-400":"border-transparent text-zinc-500 hover:text-zinc-300"}`}><t.icon size={16}/>{t.l}</button>)}</div></div>
 </header>
-<main className="max-w-7xl mx-auto px-4 py-6">
+<main className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
 {tab==="mindmap"&&<MV sections={SECTIONS} nn={nn} setNn={setNn} vids={vids} nts={nts} targetId={mindmapTargetId} clearTarget={()=>setMindmapTargetId(null)}/>}
 {tab==="youtube"&&<YV vids={vids} setVids={setVids}/>}
 {tab==="lectures"&&<LV nts={nts} setNts={setNts} sections={SECTIONS}/>}
@@ -283,13 +284,13 @@ const sp=sel?findNodePath(sections,sel.id):null;
 const blocks=detailBlocks(sel?.detail);
 useEffect(()=>{if(!targetId)return;const path=findNodePath(sections,targetId);if(!path)return;setSel(path[path.length-1]);setExp(p=>{const n=new Set(p);path.forEach(x=>n.add(x.id));return n;});if(clearTarget)clearTarget();},[targetId,sections,clearTarget]);
 return(
-<div className="flex flex-col xl:flex-row gap-4 xl:gap-6" style={{minHeight:"calc(100vh - 160px)"}}>
+<div className="flex flex-col xl:flex-row gap-4 xl:gap-6 xl:min-h-[calc(100vh-160px)]">
 <div className="xl:flex-1 min-w-0">
 <div className="flex items-center justify-between mb-4"><h2 className="text-lg font-bold text-zinc-100 flex items-center gap-2"><Map size={20} className="text-teal-500"/>โครงสร้าง ป.พ.พ. บรรพ ๑–๒</h2>
 <button onClick={()=>setExp(new Set(["b1","b2"]))} className="text-xs text-zinc-300 hover:text-white px-3 py-1.5 rounded-lg border border-zinc-700/60 bg-zinc-900/80">ยุบทั้งหมด</button></div>
 <div className="space-y-1 bg-zinc-900/35 border border-zinc-800/60 rounded-2xl p-2.5">{sections.map(s=><TN key={s.id} n={s} d={0} ex={exp} tog={tog} sel={sel} setSel={setSel} nn={nn}/>)}</div></div>
 <div className={`${fs?"fixed inset-0 z-[70] p-4 md:p-6 bg-zinc-950/95 backdrop-blur-md":"w-full xl:w-[420px] flex-shrink-0"}`}>{sel?(
-<div className={`${fs?"h-full":"sticky top-36 max-h-[calc(100vh-170px)]"} bg-zinc-900/95 border border-zinc-700/70 shadow-2xl rounded-2xl overflow-hidden flex flex-col`}>
+<div className={`${fs?"h-full":"xl:sticky xl:top-36 xl:max-h-[calc(100vh-170px)]"} bg-zinc-900/95 border border-zinc-700/70 shadow-2xl rounded-2xl overflow-hidden flex flex-col`}>
 <div className="p-5 border-b border-zinc-800/70 flex items-start justify-between gap-3"><div><span className={`text-[11px] font-semibold px-2 py-0.5 rounded-md border ${TC[sel.type]||TC.section}`}>{sel.type==="section"?`มาตรา ${sel.num}`:sel.type==="part"?"บรรพ":sel.type==="chapter"?"ลักษณะ":"หมวด"}</span>
 <h3 className="text-base font-bold text-zinc-100 mt-2">{sel.label}</h3>
 {sel.summary&&<p className="text-sm text-zinc-300 mt-1.5 leading-relaxed">{sel.summary}</p>}
@@ -305,7 +306,7 @@ return(
 {rn.length>0&&<div className="p-5"><h4 className="text-sm font-semibold text-blue-400 mb-3 flex items-center gap-2"><FileText size={14}/>Lecture ({rn.length})</h4>{rn.map(n=><div key={n.id} className="p-2 rounded-lg bg-zinc-800/45 text-sm text-zinc-300">{n.title}</div>)}</div>}
 </div>
 </div>):(
-<div className={`${fs?"h-full":"sticky top-36"} bg-zinc-900/55 border border-zinc-700/50 rounded-2xl p-8 text-center`}><Map size={40} className="text-zinc-700 mx-auto mb-3"/><p className="text-sm text-zinc-400">เลือกมาตรา/ลักษณะ<br/>จากแผนผังด้านซ้าย</p></div>)}</div></div>);}
+<div className={`${fs?"h-full":"xl:sticky xl:top-36"} bg-zinc-900/55 border border-zinc-700/50 rounded-2xl p-8 text-center`}><Map size={40} className="text-zinc-700 mx-auto mb-3"/><p className="text-sm text-zinc-400">เลือกมาตรา/ลักษณะ<br/>จากแผนผังด้านซ้าย</p></div>)}</div></div>);}
 
 function TN({n,d,ex,tog,sel,setSel,nn}){const hc=n.children&&n.children.length>0;const ie=ex.has(n.id);const is=sel?.id===n.id;const nc=(nn[n.id]||[]).length;
 const cl={part:"border-l-amber-500",chapter:"border-l-teal-500",division:"border-l-blue-500",section:"border-l-purple-400",book:"border-l-amber-500",sub:"border-l-cyan-500"};
