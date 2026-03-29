@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Search, BookOpen, Youtube, Map, FileText, Plus, X, ChevronRight, ChevronDown, Star, Edit3, Trash2, Tag, Clock, Save, PlayCircle, ArrowLeft, Sparkles, MessageSquare, CheckCircle, Circle, Maximize2, Minimize2, ExternalLink } from "lucide-react";
+import { Search, BookOpen, Youtube, Map, FileText, Plus, X, ChevronRight, ChevronDown, Star, Edit3, Trash2, Tag, Clock, Save, PlayCircle, ArrowLeft, Sparkles, MessageSquare, CheckCircle, Circle, Maximize2, Minimize2, ExternalLink, Sun, Moon, Minus } from "lucide-react";
 
 // ===== STORAGE (localStorage for deploy, swap to Turso API later) =====
 const store = {
@@ -195,31 +195,72 @@ const pLabel=i=>i===0?"วรรคแรก":`วรรค ${i+1}`;
 const detailBlocks=t=>(t||"").split(/\n\s*\n/g).map(s=>s.trim()).filter(Boolean);
 const pdfPage=sel=>sel?.num?PDF_PAGE_MAP[sel.num]:null;
 const pdfUrl=sel=>{if(!sel)return"/Civil_law.pdf";const p=pdfPage(sel);if(p)return`/Civil_law.pdf#page=${p}`;const key=sel.num?`มาตรา ${sel.num}`:sel.label;return `/Civil_law.pdf#search=${encodeURIComponent(key)}`;};
+const driveId=u=>{if(!u)return"";const a=u.match(/\/d\/([a-zA-Z0-9_-]+)/);if(a)return a[1];const b=u.match(/[?&]id=([a-zA-Z0-9_-]+)/);if(b)return b[1];return"";};
+const docId=u=>{if(!u)return"";const m=u.match(/document\/d\/([a-zA-Z0-9_-]+)/);return m?m[1]:"";};
+const mediaType=v=>v.sourceType||"youtube";
+const docPreview=u=>{const id=docId(u)||driveId(u);return id?`https://docs.google.com/document/d/${id}/preview`:"";};
+const audioSource=u=>{const id=driveId(u);return id?`https://drive.google.com/uc?export=download&id=${id}`:u;};
+const openSource=v=>{if(mediaType(v)==="youtube")return`https://www.youtube.com/watch?v=${v.youtubeId}`;if(mediaType(v)==="google_doc")return docPreview(v.sourceUrl)||v.sourceUrl;return v.sourceUrl;};
+const validYtId=id=>/^[a-zA-Z0-9_-]{11}$/.test(id||"");
+const MD_TEMPLATE=`# หัวข้อสรุป
+
+## หัวข้อใหญ่
+### หัวข้อย่อย
+
+**ตัวหนา** / *ตัวเอียง* / ***หนาเอียง***
+
+---
+
+## ประเด็นสำคัญ
+- ประเด็นที่ 1
+- ประเด็นที่ 2
+- ประเด็นที่ 3
+
+## เช็กลิสต์
+1. ข้อที่หนึ่ง
+2. ข้อที่สอง
+3. ข้อที่สาม
+
+## ลิงก์อ้างอิง
+[ใส่ชื่อแหล่งข้อมูล](https://example.com)
+
+## ตัวอย่างโค้ด/ข้อความกฎหมาย
+\`ตัวอย่างข้อความสั้น\`
+
+\`\`\`text
+มาตรา ...
+ข้อความอธิบาย ...
+\`\`\`
+`;
 
 export default function App(){
-  const [tab,setTab]=useState("mindmap");const [vids,setVids]=useState(INIT_VIDEOS);const [nts,setNts]=useState(INIT_NOTES);const [nn,setNn]=useState({});const [ld,setLd]=useState(false);
-  useEffect(()=>{(async()=>{const a=await store.get("cv");const b=await store.get("cn");const c=await store.get("cnn");if(a)setVids(a);if(b)setNts(b);if(c)setNn(c);setLd(true);})();},[]);
+  const [tab,setTab]=useState("mindmap");const [vids,setVids]=useState(INIT_VIDEOS);const [nts,setNts]=useState(INIT_NOTES);const [nn,setNn]=useState({});const [ld,setLd]=useState(false);const [mindmapTargetId,setMindmapTargetId]=useState(null);const [theme,setTheme]=useState("dark");const [fontScale,setFontScale]=useState(100);
+  useEffect(()=>{(async()=>{const a=await store.get("cv");const b=await store.get("cn");const c=await store.get("cnn");const d=await store.get("theme");const e=await store.get("fontScale");if(a)setVids(a);if(b)setNts(b);if(c)setNn(c);if(d==="dark"||d==="light")setTheme(d);if(typeof e==="number"&&e>=85&&e<=130)setFontScale(e);setLd(true);})();},[]);
   useEffect(()=>{if(ld)store.set("cv",vids);},[vids,ld]);useEffect(()=>{if(ld)store.set("cn",nts);},[nts,ld]);useEffect(()=>{if(ld)store.set("cnn",nn);},[nn,ld]);
+  useEffect(()=>{if(ld)store.set("theme",theme);},[theme,ld]);useEffect(()=>{if(ld)store.set("fontScale",fontScale);},[fontScale,ld]);
   const st={s:cntS(SECTIONS),v:vids.length,w:vids.filter(v=>v.status==="watched").length,n:nts.length};
   const tabs=[{id:"mindmap",icon:Map,l:"Mind Map"},{id:"youtube",icon:Youtube,l:"YouTube"},{id:"lectures",icon:FileText,l:"Lecture Notes"},{id:"search",icon:Search,l:"ค้นหา"}];
+  const goToSection=id=>{setTab("mindmap");setMindmapTargetId(id);};
+  const zoomIn=()=>setFontScale(v=>Math.min(v+5,130));
+  const zoomOut=()=>setFontScale(v=>Math.max(v-5,85));
   return(
-<div className="min-h-screen bg-zinc-950 text-zinc-200" style={{fontFamily:"'Sarabun','Noto Sans Thai',sans-serif"}}>
+<div className={`min-h-screen bg-zinc-950 text-zinc-200 ${theme==="light"?"light-mode":""}`} style={{fontFamily:"'Sarabun','Noto Sans Thai',sans-serif",fontSize:`${fontScale}%`}}>
 <header className="border-b border-zinc-800/60 bg-zinc-950/80 backdrop-blur-xl sticky top-0 z-50">
 <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
 <div className="flex items-center gap-3"><div className="w-9 h-9 rounded-xl bg-gradient-to-br from-teal-500/20 to-teal-600/10 border border-teal-500/20 flex items-center justify-center text-lg">📜</div><div><h1 className="text-base font-bold text-zinc-100 leading-tight">เรียนกฎหมายแพ่งฯ</h1><p className="text-[11px] text-zinc-500">ป.พ.พ. บรรพ ๑ หลักทั่วไป + บรรพ ๒ หนี้</p></div></div>
-<div className="flex items-center gap-1.5 text-xs text-zinc-500"><span className="px-2 py-1 bg-zinc-800/50 rounded-lg">{st.s} มาตรา</span><span className="px-2 py-1 bg-zinc-800/50 rounded-lg">{st.v} วิดีโอ</span><span className="px-2 py-1 bg-zinc-800/50 rounded-lg">{st.n} สรุป</span></div></div>
+<div className="flex items-center gap-2"><div className="flex items-center gap-1.5 text-xs text-zinc-500"><span className="px-2 py-1 bg-zinc-800/50 rounded-lg">{st.s} มาตรา</span><span className="px-2 py-1 bg-zinc-800/50 rounded-lg">{st.v} วิดีโอ</span><span className="px-2 py-1 bg-zinc-800/50 rounded-lg">{st.n} สรุป</span></div><div className="flex items-center gap-1"><button onClick={zoomOut} title="ลดขนาดตัวอักษร" className="p-1.5 rounded-lg bg-zinc-800/60 border border-zinc-700/60 text-zinc-300 hover:text-white"><Minus size={13}/></button><span className="text-[11px] text-zinc-500 w-10 text-center">{fontScale}%</span><button onClick={zoomIn} title="เพิ่มขนาดตัวอักษร" className="p-1.5 rounded-lg bg-zinc-800/60 border border-zinc-700/60 text-zinc-300 hover:text-white"><Plus size={13}/></button><button onClick={()=>setTheme(t=>t==="dark"?"light":"dark")} title={theme==="dark"?"สลับเป็น Bright mode":"สลับเป็น Dark mode"} className="p-1.5 rounded-lg bg-zinc-800/60 border border-zinc-700/60 text-zinc-300 hover:text-white">{theme==="dark"?<Sun size={14}/>:<Moon size={14}/>}</button></div></div></div>
 <div className="max-w-7xl mx-auto px-4 flex gap-0">{tabs.map(t=><button key={t.id} onClick={()=>setTab(t.id)} className={`px-4 py-2.5 flex items-center gap-2 text-sm font-medium border-b-2 transition-all ${tab===t.id?"border-teal-500 text-teal-400":"border-transparent text-zinc-500 hover:text-zinc-300"}`}><t.icon size={16}/>{t.l}</button>)}</div>
 </header>
 <main className="max-w-7xl mx-auto px-4 py-6">
-{tab==="mindmap"&&<MV sections={SECTIONS} nn={nn} setNn={setNn} vids={vids} nts={nts}/>}
+{tab==="mindmap"&&<MV sections={SECTIONS} nn={nn} setNn={setNn} vids={vids} nts={nts} targetId={mindmapTargetId} clearTarget={()=>setMindmapTargetId(null)}/>}
 {tab==="youtube"&&<YV vids={vids} setVids={setVids}/>}
 {tab==="lectures"&&<LV nts={nts} setNts={setNts} sections={SECTIONS}/>}
-{tab==="search"&&<SV sections={SECTIONS} vids={vids} nts={nts}/>}
+{tab==="search"&&<SV sections={SECTIONS} vids={vids} nts={nts} onOpenSection={goToSection}/>}
 </main></div>);
 }
 
 // === MIND MAP ===
-function MV({sections,nn,setNn,vids,nts}){const[sel,setSel]=useState(null);const[exp,setExp]=useState(new Set(["b1","b2"]));const[nt,setNt]=useState("");const[fs,setFs]=useState(false);
+function MV({sections,nn,setNn,vids,nts,targetId,clearTarget}){const[sel,setSel]=useState(null);const[exp,setExp]=useState(new Set(["b1","b2"]));const[nt,setNt]=useState("");const[fs,setFs]=useState(false);
 const tog=id=>{const n=new Set(exp);n.has(id)?n.delete(id):n.add(id);setExp(n);};
 const addN=()=>{if(!nt.trim()||!sel)return;const k=sel.id;setNn({...nn,[k]:[...(nn[k]||[]),{id:Date.now().toString(),text:nt,at:new Date().toISOString()}]});setNt("");};
 const delN=(sid,nid)=>{setNn({...nn,[sid]:(nn[sid]||[]).filter(n=>n.id!==nid)});};
@@ -227,6 +268,7 @@ const rv=sel?vids.filter(v=>v.tags.some(t=>t.includes(sel.num||"_"))):[];
 const rn=sel?nts.filter(n=>n.sectionId===sel.id):[];
 const sp=sel?findNodePath(sections,sel.id):null;
 const blocks=detailBlocks(sel?.detail);
+useEffect(()=>{if(!targetId)return;const path=findNodePath(sections,targetId);if(!path)return;setSel(path[path.length-1]);setExp(p=>{const n=new Set(p);path.forEach(x=>n.add(x.id));return n;});if(clearTarget)clearTarget();},[targetId,sections,clearTarget]);
 return(
 <div className="flex flex-col xl:flex-row gap-4 xl:gap-6" style={{minHeight:"calc(100vh - 160px)"}}>
 <div className="xl:flex-1 min-w-0">
@@ -263,15 +305,28 @@ return(<div><div onClick={()=>{setSel(n);if(hc)tog(n.id);}} style={{paddingLeft:
 </div>{hc&&ie&&<div>{n.children.map(c=><TN key={c.id} n={c} d={d+1} ex={ex} tog={tog} sel={sel} setSel={setSel} nn={nn}/>)}</div>}</div>);}
 
 // === YOUTUBE ===
-function YV({vids,setVids}){const[q,setQ]=useState("");const[ft,setFt]=useState("");const[fs,setFs]=useState("");const[sa,setSa]=useState(false);
-const at=[...new Set(vids.flatMap(v=>v.tags))].sort();const fl=vids.filter(v=>{if(q&&!v.title.toLowerCase().includes(q.toLowerCase())&&!v.channel.toLowerCase().includes(q.toLowerCase()))return false;if(ft&&!v.tags.includes(ft))return false;if(fs&&v.status!==fs)return false;return true;});
+function YV({vids,setVids}){const[q,setQ]=useState("");const[ft,setFt]=useState("");const[fs,setFs]=useState("");const[sa,setSa]=useState(false);const[editingId,setEditingId]=useState(null);const initForm={sourceType:"youtube",youtubeId:"",sourceUrl:"",title:"",channel:"",tags:"",rating:4};const[f,sF]=useState(initForm);
+const at=[...new Set(vids.flatMap(v=>v.tags))].sort();const fl=vids.filter(v=>{if(q&&!v.title.toLowerCase().includes(q.toLowerCase())&&!v.channel.toLowerCase().includes(q.toLowerCase())&&!(v.sourceUrl||"").toLowerCase().includes(q.toLowerCase()))return false;if(ft&&!v.tags.includes(ft))return false;if(fs&&v.status!==fs)return false;return true;});
 const uv=(id,u)=>setVids(vids.map(v=>v.id===id?{...v,...u}:v));const dv=id=>setVids(vids.filter(v=>v.id!==id));
-return(<div><div className="flex items-center justify-between mb-5"><h2 className="text-lg font-bold text-zinc-100 flex items-center gap-2"><Youtube size={20} className="text-red-500"/>YouTube Database</h2><button onClick={()=>setSa(true)} className="flex items-center gap-2 px-4 py-2 bg-red-500/20 text-red-400 rounded-xl text-sm font-medium hover:bg-red-500/30 border border-red-500/20"><Plus size={16}/>เพิ่มวิดีโอ</button></div>
-{sa&&<div className="bg-zinc-900/80 border border-zinc-800/60 rounded-2xl p-5 mb-5">{(()=>{const[f,sF]=useState({youtubeId:"",title:"",channel:"",tags:"",rating:4});return(<><h3 className="text-sm font-bold text-zinc-200 mb-4">เพิ่มวิดีโอใหม่</h3><div className="grid grid-cols-2 gap-3 mb-3"><input value={f.youtubeId} onChange={e=>sF({...f,youtubeId:e.target.value})} placeholder="YouTube Video ID" className="bg-zinc-800/60 border border-zinc-700/50 rounded-lg px-3 py-2 text-sm text-zinc-200 placeholder-zinc-500 outline-none"/><input value={f.channel} onChange={e=>sF({...f,channel:e.target.value})} placeholder="Channel" className="bg-zinc-800/60 border border-zinc-700/50 rounded-lg px-3 py-2 text-sm text-zinc-200 placeholder-zinc-500 outline-none"/></div><input value={f.title} onChange={e=>sF({...f,title:e.target.value})} placeholder="ชื่อวิดีโอ *" className="w-full bg-zinc-800/60 border border-zinc-700/50 rounded-lg px-3 py-2 text-sm text-zinc-200 placeholder-zinc-500 outline-none mb-3"/><input value={f.tags} onChange={e=>sF({...f,tags:e.target.value})} placeholder="Tags (คั่นด้วย , เช่น ม.420, ละเมิด)" className="w-full bg-zinc-800/60 border border-zinc-700/50 rounded-lg px-3 py-2 text-sm text-zinc-200 placeholder-zinc-500 outline-none mb-3"/><div className="flex items-center gap-3 mb-4"><span className="text-xs text-zinc-500">คะแนน:</span>{[1,2,3,4,5].map(r=><button key={r} onClick={()=>sF({...f,rating:r})} className={`text-lg ${r<=f.rating?"text-amber-400":"text-zinc-600"}`}>★</button>)}</div><div className="flex gap-2 justify-end"><button onClick={()=>setSa(false)} className="px-4 py-2 text-sm text-zinc-400">ยกเลิก</button><button onClick={()=>{if(!f.title.trim())return;setVids([{id:"v"+Date.now(),youtubeId:f.youtubeId||"dQw4w9WgXcQ",title:f.title,channel:f.channel,tags:f.tags.split(",").map(t=>t.trim()).filter(Boolean),rating:f.rating,status:"unwatched",favorite:false},...vids]);setSa(false);}} className="px-4 py-2 bg-red-500/20 text-red-400 rounded-lg text-sm font-medium border border-red-500/20">บันทึก</button></div></>);})()}</div>}
+const openAdd=()=>{sF(initForm);setEditingId(null);setSa(true);};
+const openEdit=v=>{sF({sourceType:mediaType(v),youtubeId:v.youtubeId||"",sourceUrl:v.sourceUrl||"",title:v.title||"",channel:v.channel||"",tags:(v.tags||[]).join(", "),rating:v.rating||4});setEditingId(v.id);setSa(true);};
+const saveForm=()=>{if(!f.title.trim())return;if(f.sourceType==="youtube"&&!validYtId(f.youtubeId.trim()))return;if(f.sourceType!=="youtube"&&!f.sourceUrl.trim())return;const baseTags=f.tags.split(",").map(t=>t.trim()).filter(Boolean);const autoTags=f.sourceType==="youtube"?[]:(f.sourceType==="google_doc"?["google drive","google doc","เนื้อหา"]:["google drive","mp3","เสียง"]);const tags=[...new Set([...baseTags,...autoTags])];const payload={sourceType:f.sourceType,youtubeId:f.sourceType==="youtube"?f.youtubeId.trim():"",sourceUrl:f.sourceType!=="youtube"?f.sourceUrl.trim():"",title:f.title,channel:f.channel||"Google Drive",tags,rating:f.rating};if(editingId){setVids(vids.map(v=>v.id===editingId?{...v,...payload}:v));}else{setVids([{id:"v"+Date.now(),...payload,status:"unwatched",favorite:false},...vids]);}setSa(false);setEditingId(null);};
+return(<div><div className="flex items-center justify-between mb-5"><h2 className="text-lg font-bold text-zinc-100 flex items-center gap-2"><Youtube size={20} className="text-red-500"/>YouTube Database</h2><button onClick={openAdd} className="flex items-center gap-2 px-4 py-2 bg-red-500/20 text-red-400 rounded-xl text-sm font-medium hover:bg-red-500/30 border border-red-500/20"><Plus size={16}/>เพิ่มวิดีโอ</button></div>
+{sa&&<div className="bg-zinc-900/80 border border-zinc-800/60 rounded-2xl p-5 mb-5"><h3 className="text-sm font-bold text-zinc-200 mb-4">{editingId?"แก้ไขลิงก์/ข้อมูลเนื้อหา":"เพิ่มเนื้อหาใหม่ (YouTube / Google Drive)"}</h3><div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3"><select value={f.sourceType} onChange={e=>sF({...f,sourceType:e.target.value})} className="bg-zinc-800/60 border border-zinc-700/50 rounded-lg px-3 py-2 text-sm text-zinc-300 outline-none"><option value="youtube">YouTube</option><option value="google_doc">Google Doc</option><option value="google_mp3">Google Drive MP3</option></select><input value={f.channel} onChange={e=>sF({...f,channel:e.target.value})} placeholder="Channel / ผู้เขียน" className="bg-zinc-800/60 border border-zinc-700/50 rounded-lg px-3 py-2 text-sm text-zinc-200 placeholder-zinc-500 outline-none"/></div>{f.sourceType==="youtube"?<input value={f.youtubeId} onChange={e=>sF({...f,youtubeId:e.target.value})} placeholder="YouTube Video ID (11 ตัว)" className="w-full bg-zinc-800/60 border border-zinc-700/50 rounded-lg px-3 py-2 text-sm text-zinc-200 placeholder-zinc-500 outline-none mb-3"/>:<input value={f.sourceUrl} onChange={e=>sF({...f,sourceUrl:e.target.value})} placeholder={f.sourceType==="google_doc"?"ลิงก์ Google Doc":"ลิงก์ Google Drive MP3"} className="w-full bg-zinc-800/60 border border-zinc-700/50 rounded-lg px-3 py-2 text-sm text-zinc-200 placeholder-zinc-500 outline-none mb-3"/>}<input value={f.title} onChange={e=>sF({...f,title:e.target.value})} placeholder="ชื่อเนื้อหา *" className="w-full bg-zinc-800/60 border border-zinc-700/50 rounded-lg px-3 py-2 text-sm text-zinc-200 placeholder-zinc-500 outline-none mb-3"/><input value={f.tags} onChange={e=>sF({...f,tags:e.target.value})} placeholder="Tags (คั่นด้วย , เช่น ม.420, ละเมิด, google drive)" className="w-full bg-zinc-800/60 border border-zinc-700/50 rounded-lg px-3 py-2 text-sm text-zinc-200 placeholder-zinc-500 outline-none mb-3"/><div className="flex items-center gap-3 mb-4"><span className="text-xs text-zinc-500">คะแนน:</span>{[1,2,3,4,5].map(r=><button key={r} onClick={()=>sF({...f,rating:r})} className={`text-lg ${r<=f.rating?"text-amber-400":"text-zinc-600"}`}>★</button>)}</div><div className="flex gap-2 justify-end"><button onClick={()=>{setSa(false);setEditingId(null);}} className="px-4 py-2 text-sm text-zinc-400">ยกเลิก</button><button onClick={saveForm} className="px-4 py-2 bg-red-500/20 text-red-400 rounded-lg text-sm font-medium border border-red-500/20">{editingId?"บันทึกการแก้ไข":"บันทึก"}</button></div></div>}
 <div className="flex flex-wrap gap-3 mb-5"><div className="flex-1 min-w-[200px] relative"><Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500"/><input value={q} onChange={e=>setQ(e.target.value)} placeholder="ค้นหาวิดีโอ..." className="w-full bg-zinc-900/60 border border-zinc-800/60 rounded-xl pl-10 pr-4 py-2.5 text-sm text-zinc-200 placeholder-zinc-500 outline-none focus:border-teal-500/50"/></div>
 <select value={ft} onChange={e=>setFt(e.target.value)} className="bg-zinc-900/60 border border-zinc-800/60 rounded-xl px-4 py-2.5 text-sm text-zinc-300 outline-none"><option value="">ทุก Tag</option>{at.map(t=><option key={t} value={t}>{t}</option>)}</select>
 <select value={fs} onChange={e=>setFs(e.target.value)} className="bg-zinc-900/60 border border-zinc-800/60 rounded-xl px-4 py-2.5 text-sm text-zinc-300 outline-none"><option value="">ทุกสถานะ</option><option value="unwatched">ยังไม่ดู</option><option value="watching">กำลังดู</option><option value="watched">ดูแล้ว</option></select></div>
-<div className="grid grid-cols-1 md:grid-cols-2 gap-4">{fl.map(v=>{const I=SI[v.status];return(<div key={v.id} className="bg-zinc-900/60 border border-zinc-800/40 rounded-2xl overflow-hidden hover:border-zinc-700/60 transition-all group"><div className="relative"><div className="aspect-video bg-zinc-800 flex items-center justify-center"><img src={`https://img.youtube.com/vi/${v.youtubeId}/mqdefault.jpg`} alt="" className="w-full h-full object-cover opacity-80" onError={e=>{e.target.style.display="none"}}/><div className="absolute inset-0 flex items-center justify-center bg-black/30"><PlayCircle size={48} className="text-white/80"/></div></div><button onClick={()=>uv(v.id,{favorite:!v.favorite})} className="absolute top-3 right-3"><Star size={20} className={v.favorite?"text-amber-400 fill-amber-400":"text-white/40"}/></button></div><div className="p-4"><h3 className="text-sm font-semibold text-zinc-200 leading-snug mb-1 line-clamp-2">{v.title}</h3><p className="text-xs text-zinc-500 mb-3">{v.channel}</p><div className="flex flex-wrap gap-1.5 mb-3">{v.tags.map(t=><span key={t} className="text-[11px] px-2 py-0.5 rounded-md bg-zinc-800 text-zinc-400 border border-zinc-700/50">{t}</span>)}</div><div className="flex items-center justify-between"><button onClick={()=>{const nx=v.status==="unwatched"?"watching":v.status==="watching"?"watched":"unwatched";uv(v.id,{status:nx});}} className={`flex items-center gap-1.5 text-xs ${SC[v.status]}`}><I size={14}/>{v.status==="unwatched"?"ยังไม่ดู":v.status==="watching"?"กำลังดู":"ดูแล้ว"}</button><div className="flex gap-1.5"><span className="text-xs text-amber-400">{"★".repeat(v.rating)}</span><button onClick={()=>dv(v.id)} className="text-zinc-600 hover:text-red-400 opacity-0 group-hover:opacity-100"><Trash2 size={14}/></button></div></div></div></div>);})}</div>
+<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+{fl.map(v=>{const I=SI[v.status];const tp=mediaType(v);const doc=tp==="google_doc"?docPreview(v.sourceUrl):"";const aud=tp==="google_mp3"?audioSource(v.sourceUrl):"";const ytThumb=validYtId(v.youtubeId)?`https://img.youtube.com/vi/${v.youtubeId}/mqdefault.jpg`:"";return(
+<div key={v.id} className="bg-zinc-900/60 border border-zinc-800/40 rounded-2xl overflow-hidden hover:border-zinc-700/60 transition-all group">
+<div className="relative"><div className="aspect-video bg-zinc-800 flex items-center justify-center">{tp==="youtube"?ytThumb?<><img src={ytThumb} alt="" className="w-full h-full object-cover opacity-80"/><div className="absolute inset-0 flex items-center justify-center bg-black/30"><PlayCircle size={48} className="text-white/80"/></div></>:<div className="text-zinc-500 text-sm">ยังไม่มี YouTube ID ที่ถูกต้อง</div>:tp==="google_doc"?doc?<iframe src={doc} title={v.title} className="w-full h-full border-0" loading="lazy"/>:<div className="text-zinc-500 text-sm">ลิงก์ Google Doc ไม่ถูกต้อง</div>:<div className="w-full h-full p-4 flex flex-col items-center justify-center gap-3 bg-zinc-900/60"><FileText size={34} className="text-blue-400"/>{aud?<audio controls src={aud} className="w-full"/>:<div className="text-zinc-500 text-sm">ลิงก์ MP3 ไม่ถูกต้อง</div>}</div>}</div><button onClick={()=>uv(v.id,{favorite:!v.favorite})} className="absolute top-3 right-3"><Star size={20} className={v.favorite?"text-amber-400 fill-amber-400":"text-white/40"}/></button></div>
+<div className="p-4">
+<div className="flex items-start justify-between gap-2 mb-1"><h3 className="text-sm font-semibold text-zinc-200 leading-snug line-clamp-2">{v.title}</h3><button onClick={()=>openEdit(v)} className="text-[11px] px-2 py-1 rounded-md border border-blue-500/40 bg-blue-500/15 text-blue-200 hover:text-white inline-flex items-center gap-1 flex-shrink-0"><Edit3 size={11}/>Edit link</button></div>
+<p className="text-xs text-zinc-500 mb-3">{v.channel}</p>
+<div className="flex flex-wrap gap-1.5 mb-3">{v.tags.map(t=><span key={t} className="text-[11px] px-2 py-0.5 rounded-md bg-zinc-800 text-zinc-400 border border-zinc-700/50">{t}</span>)}</div>
+<div className="flex items-center justify-between gap-2"><button onClick={()=>{const nx=v.status==="unwatched"?"watching":v.status==="watching"?"watched":"unwatched";uv(v.id,{status:nx});}} className={`flex items-center gap-1.5 text-xs ${SC[v.status]}`}><I size={14}/>{v.status==="unwatched"?"ยังไม่ดู":v.status==="watching"?"กำลังดู":"ดูแล้ว"}</button><div className="flex items-center gap-1.5"><a href={openSource(v)} target="_blank" rel="noreferrer" className="text-[11px] px-2 py-1 rounded-md border border-zinc-700/60 bg-zinc-800/60 text-zinc-300 hover:text-white inline-flex items-center gap-1">เปิด <ExternalLink size={11}/></a><span className="text-xs text-amber-400">{"★".repeat(v.rating)}</span><button onClick={()=>{if(window.confirm(`ยืนยันการลบรายการ "${v.title}" ?`))dv(v.id);}} className="text-[11px] px-2 py-1 rounded-md border border-red-500/30 bg-red-500/10 text-red-300 hover:text-red-200 inline-flex items-center gap-1"><Trash2 size={12}/>ลบ</button></div></div>
+</div></div>);})}
+</div>
 {fl.length===0&&<div className="text-center py-16"><Youtube size={40} className="text-zinc-700 mx-auto mb-3"/><p className="text-zinc-500 text-sm">ไม่พบวิดีโอ</p></div>}</div>);}
 
 // === LECTURES ===
@@ -297,12 +352,13 @@ return(<div className="bg-zinc-900/80 border border-zinc-800/60 rounded-2xl p-5 
 <div className="grid grid-cols-3 gap-3 mb-3"><select value={f.sectionId} onChange={e=>sF({...f,sectionId:e.target.value})} className="bg-zinc-800/60 border border-zinc-700/50 rounded-lg px-3 py-2 text-sm text-zinc-300 outline-none"><option value="">เลือกมาตรา</option>{as.map(s=><option key={s.id} value={s.id}>{s.l}</option>)}</select>
 <input value={f.source} onChange={e=>sF({...f,source:e.target.value})} placeholder="แหล่งที่มา" className="bg-zinc-800/60 border border-zinc-700/50 rounded-lg px-3 py-2 text-sm text-zinc-200 placeholder-zinc-500 outline-none"/>
 <select value={f.type} onChange={e=>sF({...f,type:e.target.value})} className="bg-zinc-800/60 border border-zinc-700/50 rounded-lg px-3 py-2 text-sm text-zinc-300 outline-none"><option value="summary">สรุป</option><option value="case_law">คำพิพากษา</option><option value="comparison">เปรียบเทียบ</option><option value="formula">สูตร/หลักการ</option><option value="exam_prep">เตรียมสอบ</option></select></div>
+<div className="flex items-center justify-between mb-2"><span className="text-[11px] text-zinc-500">รองรับ Markdown: หัวข้อ, หนา/เอียง, ลิสต์, ลิงก์, code block</span><button onClick={()=>sF({...f,content:f.content.trim()?`${f.content}\n\n${MD_TEMPLATE}`:MD_TEMPLATE})} className="text-[11px] px-2 py-1 rounded-md border border-teal-500/30 bg-teal-500/10 text-teal-300 hover:text-teal-200">แทรกเทมเพลต Markdown</button></div>
 <textarea value={f.content} onChange={e=>sF({...f,content:e.target.value})} placeholder="เนื้อหา (Markdown)" rows={12} className="w-full bg-zinc-800/60 border border-zinc-700/50 rounded-lg px-3 py-2.5 text-sm text-zinc-200 placeholder-zinc-500 outline-none resize-y mb-3 font-mono leading-relaxed"/>
 <div className="flex items-center justify-between"><label className="flex items-center gap-2 text-xs text-zinc-400 cursor-pointer"><input type="checkbox" checked={f.starred} onChange={e=>sF({...f,starred:e.target.checked})} className="accent-amber-500"/>ติดดาว</label>
 <div className="flex gap-2"><button onClick={onCancel} className="px-4 py-2 text-sm text-zinc-400">ยกเลิก</button><button onClick={()=>{if(!f.title.trim())return;onSave(f);}} className="px-4 py-2 bg-blue-500/20 text-blue-400 rounded-lg text-sm font-medium border border-blue-500/20 flex items-center gap-2"><Save size={14}/>บันทึก</button></div></div></div>);}
 
 // === SEARCH ===
-function SV({sections,vids,nts}){const[q,setQ]=useState("");const ql=q.toLowerCase();
+function SV({sections,vids,nts,onOpenSection}){const[q,setQ]=useState("");const ql=q.toLowerCase();
 const sr=[];const ss=ns=>{for(const n of ns){if(ql&&(n.label.toLowerCase().includes(ql)||n.summary?.toLowerCase().includes(ql)||n.detail?.toLowerCase().includes(ql)||n.num?.includes(ql)))sr.push(n);if(n.children)ss(n.children);}};if(ql)ss(sections);
 const vr=ql?vids.filter(v=>v.title.toLowerCase().includes(ql)||v.tags.some(t=>t.toLowerCase().includes(ql))):[];
 const nr=ql?nts.filter(n=>n.title.toLowerCase().includes(ql)||n.content.toLowerCase().includes(ql)):[];
@@ -311,7 +367,7 @@ return(<div>
 <h2 className="text-lg font-bold text-zinc-100 flex items-center gap-2 mb-5"><Search size={20} className="text-teal-500"/>ค้นหาทั้งระบบ</h2>
 <div className="relative mb-6"><Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500"/><input value={q} onChange={e=>setQ(e.target.value)} placeholder='ค้นหา เช่น "420" "ละเมิด" "โมฆะ" "สัญญา" "ดอกเบี้ย"' autoFocus className="w-full bg-zinc-900/60 border border-zinc-800/60 rounded-2xl pl-12 pr-4 py-3.5 text-base text-zinc-200 placeholder-zinc-500 outline-none focus:border-teal-500/50"/></div>
 {ql&&<p className="text-sm text-zinc-500 mb-4">พบ {tot} ผลลัพธ์สำหรับ "{q}"</p>}
-{sr.length>0&&<div className="mb-6"><h3 className="text-sm font-semibold text-purple-400 mb-3 flex items-center gap-2"><BookOpen size={14}/>มาตรา ({sr.length})</h3><div className="space-y-2">{sr.map(s=><div key={s.id} className="bg-zinc-900/60 border border-zinc-800/40 rounded-xl p-4 hover:border-zinc-700/60"><div className="flex items-center gap-2 mb-1"><span className={`text-[11px] font-semibold px-2 py-0.5 rounded-md border ${TC[s.type]||TC.section}`}>{s.num?`ม.${s.num}`:s.type}</span><span className="text-sm font-semibold text-zinc-200">{s.label}</span></div>{s.summary&&<p className="text-xs text-zinc-400">{s.summary}</p>}{s.penalty&&s.penalty!=="—"&&<p className="text-xs text-teal-400 mt-1">📌 {s.penalty}</p>}</div>)}</div></div>}
+{sr.length>0&&<div className="mb-6"><h3 className="text-sm font-semibold text-purple-400 mb-3 flex items-center gap-2"><BookOpen size={14}/>มาตรา ({sr.length})</h3><div className="space-y-2">{sr.map(s=><button key={s.id} onClick={()=>onOpenSection&&onOpenSection(s.id)} className="w-full text-left bg-zinc-900/60 border border-zinc-800/40 rounded-xl p-4 hover:border-teal-500/40 hover:bg-zinc-900/85 transition-all"><div className="flex items-center gap-2 mb-1"><span className={`text-[11px] font-semibold px-2 py-0.5 rounded-md border ${TC[s.type]||TC.section}`}>{s.num?`ม.${s.num}`:s.type}</span><span className="text-sm font-semibold text-zinc-200">{s.label}</span><span className="ml-auto text-[11px] text-teal-400">เปิดดู</span></div>{s.summary&&<p className="text-xs text-zinc-400">{s.summary}</p>}{s.penalty&&s.penalty!=="—"&&<p className="text-xs text-teal-400 mt-1">📌 {s.penalty}</p>}</button>)}</div></div>}
 {vr.length>0&&<div className="mb-6"><h3 className="text-sm font-semibold text-red-400 mb-3 flex items-center gap-2"><Youtube size={14}/>วิดีโอ ({vr.length})</h3><div className="space-y-2">{vr.map(v=><div key={v.id} className="bg-zinc-900/60 border border-zinc-800/40 rounded-xl p-4 flex items-center gap-3"><PlayCircle size={20} className="text-red-400 flex-shrink-0"/><div className="flex-1 min-w-0"><p className="text-sm font-semibold text-zinc-200 truncate">{v.title}</p><p className="text-xs text-zinc-500">{v.channel}</p></div></div>)}</div></div>}
 {nr.length>0&&<div className="mb-6"><h3 className="text-sm font-semibold text-blue-400 mb-3 flex items-center gap-2"><FileText size={14}/>Lecture Notes ({nr.length})</h3><div className="space-y-2">{nr.map(n=><div key={n.id} className="bg-zinc-900/60 border border-zinc-800/40 rounded-xl p-4"><p className="text-sm font-semibold text-zinc-200">{n.title}</p><p className="text-xs text-zinc-400 mt-1">{n.content.replace(/[#*]/g,"").substring(0,100)}...</p></div>)}</div></div>}
 {ql&&tot===0&&<div className="text-center py-16"><Search size={40} className="text-zinc-700 mx-auto mb-3"/><p className="text-zinc-500 text-sm">ไม่พบผลลัพธ์</p></div>}

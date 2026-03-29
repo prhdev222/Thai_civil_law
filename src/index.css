@@ -6,3 +6,13 @@ body { font-family: 'Sarabun','Noto Sans Thai',sans-serif; background: #09090b; 
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 3px; }
 .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.light-mode {
+  filter: invert(1) hue-rotate(180deg);
+  background: #f4f4f5;
+}
+.light-mode img,
+.light-mode iframe,
+.light-mode video,
+.light-mode audio {
+  filter: invert(1) hue-rotate(180deg);
+}
